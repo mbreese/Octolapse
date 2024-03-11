@@ -36,7 +36,7 @@
 // Sometimes used to test performance in release mode.
 //#include "test.h"
 
-int main(int argc, wchar_t* argv[])
+int main(int argc, char* argv[])
 {
 	wchar_t* program = argv[0];
 	if (program == NULL) {
