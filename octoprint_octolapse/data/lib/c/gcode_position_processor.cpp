@@ -38,9 +38,19 @@
 
 int main(int argc, char* argv[])
 {
-	wchar_t* program = argv[0];
+
+    wchar_t** wargv = new wchar_t*[argc];
+    for(int i = 0; i < argc; i++) {
+        wargv[i] = Py_DecodeLocale(argv[i], nullptr);
+        if(wargv[i] == nullptr)
+        {
+            return EXIT_FAILURE;
+        }
+    }
+
+	wchar_t* program = wargv[0];
 	if (program == NULL) {
-		fprintf(stderr, "Fatal error: cannot decode argv[0]\n");
+		fprintf(stderr, "Fatal error: cannot decode wargv[0]\n");
 		exit(1);
 	}
 
@@ -58,14 +68,14 @@ int main(int argc, char* argv[])
 		PyConfig config;
 		PyConfig_InitPythonConfig(&config);
 
-		if (argc && argv) {
+		if (argc && wargv) {
 			status = PyConfig_SetString(&config, &config.program_name, program);
 			if (PyStatus_Exception(status)) {
 				PyConfig_Clear(&config);
 				return 1;
 			}
 
-			status = PyConfig_SetArgv(&config, argc, argv);
+			status = PyConfig_SetArgv(&config, argc, wargv);
 			if (PyStatus_Exception(status)) {
 				PyConfig_Clear(&config);
 				return 1;
@@ -93,7 +103,16 @@ int main(int argc, char* argv[])
 	// Optionally import the module; alternatively, import can be deferred until the embedded script imports it.
 	PyImport_ImportModule("GcodePositionProcessor");
 	PyMem_RawFree(program);
-	return 0;
+
+    for(int i = 0; i < argc; i++) {
+        PyMem_RawFree(wargv[i]);
+        wargv[i] = nullptr;
+    }
+
+    delete[] wargv;
+    wargv = nullptr;
+
+    return 0;
 }
 
 struct module_state
